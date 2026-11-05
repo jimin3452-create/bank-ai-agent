@@ -1,0 +1,24 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bank}
+      POSTGRES_DB: ${POSTGRES_DB:-bank}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # 최초 기동 시 001 -> 002 -> 003 순서로 자동 적용된다 (seed 폴더는 제외)
+      - ./db/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      - ./db/002_spending.sql:/docker-entrypoint-initdb.d/002_spending.sql:ro
+      - ./db/003_rag.sql:/docker-entrypoint-initdb.d/003_rag.sql:ro
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"   # 받은 메일 확인 화면
+      - "1025:1025"   # SMTP
+
+volumes:
+  pgdata:

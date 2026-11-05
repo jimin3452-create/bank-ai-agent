@@ -1,0 +1,21 @@
+# 비밀값
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,19 @@
+[project]
+name = "bank-ai-agent-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic-settings",
+    "psycopg[binary,pool]",
+    "pgvector",
+    "pyjwt",
+    "argon2-cffi",
+    "cryptography",
+    "apscheduler",
+    "google-genai",
+]
+
+[dependency-groups]
+dev = ["pytest", "httpx"]

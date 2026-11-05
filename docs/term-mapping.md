@@ -1,6 +1,6 @@
 # 용어 매핑표 (한글명 = 영문 테이블·컬럼명)
 
-기준: `Internet Banking_2026-11-05T06_15_28.588Z.sql` (PostgreSQL). 한글 설명은 SQL의 COMMENT를 그대로 옮겼고, 영문은 SQL 이름과 동일하다.
+기준: `db/001_init.sql` (PostgreSQL). 한글 설명은 SQL의 COMMENT를 그대로 옮겼고, 영문은 SQL 이름과 동일하다.
 
 ## 1. 테이블
 
