@@ -13,6 +13,9 @@ dependencies = [
     "cryptography",
     "apscheduler",
     "google-genai",
+    "langgraph",
+    "langgraph-checkpoint-postgres",
+    "langchain-google-genai",
 ]
 
 [dependency-groups]
