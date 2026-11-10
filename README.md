@@ -57,7 +57,7 @@ cd backend
 ```
 - 인증번호 메일은 Mailpit(http://localhost:8025)에서 확인한다.
 - **에이전트는 Gemini 키가 있어야 동작한다.** `.env`의 `GEMINI_API_KEY=` 뒤에 직접 넣는다(채팅·커밋에 올리지 말 것). 키가 없으면 `/api/agent/chat`은 503을 돌려준다. 모델은 `GEMINI_MODEL`로 바꾼다(기본값은 구현 시점의 공식 문서로 확인).
-- 모델의 이해 품질 확인: `backend/.venv/Scripts/python scripts/eval_agent.py` (골든 질문 51개, 키 필요)
+- 모델의 이해 품질 확인: `backend/.venv/Scripts/python scripts/eval_agent.py` (골든 질문 51개, 키 필요). 결과와 개선 과정은 [docs/agent-spec.md](docs/agent-spec.md) 6절 참조
 - 구현된 API:
   - 회원·인증: 약관, 이메일 인증번호, 회원가입, 로그인(ID/PW·PIN), 로그아웃, 비밀번호 재설정, 내 정보, PIN 확인, 접속 기록, 정보 변경(휴대폰·생년월일·이메일), PIN 변경, 회원 탈퇴(제한 사유 확인 포함)
   - 계좌: 상품 안내·가입 가능 여부, 계좌 개설, 목록·상세, 거래내역 조회·검색·상세, 거래내역 다운로드(CSV 메일), 즐겨찾기·별칭, 이체한도 조회·변경, 통장 비밀번호 확인(5회 오류 시 거래중지), 거래중지 해제, 해지 가능 여부·해지

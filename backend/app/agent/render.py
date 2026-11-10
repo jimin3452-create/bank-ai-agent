@@ -11,8 +11,8 @@ ACCOUNT_STATUS_KO = {"ACTIVE": "정상", "SUSPENDED": "거래중지", "CLOSED": 
 
 SMALLTALK = ("안녕하세요! 계좌·거래내역 조회, 소비 분석, 예산 설정을 도와드려요. "
              "이체나 카드 분실 신고처럼 인증이 필요한 일은 해당 화면으로 안내해 드릴게요.")
-OUT_OF_SCOPE = ("투자나 금융상품 추천, 대출·세금 상담 같은 질문은 도와드리기 어려워요. "
-                "대신 계좌·거래내역이나 이번 달 소비, 예산을 확인해 드릴까요?")
+OUT_OF_SCOPE = ("그런 요청은 도와드리기 어려워요. 투자·금융상품 추천, 대출·세금 상담, 다른 사람의 정보 조회, 앱과 무관한 질문은 답하지 않아요. "
+                "대신 내 계좌·거래내역이나 이번 달 소비, 예산을 확인해 드릴까요?")
 LLM_ERROR = "지금은 분석할 수 없어요. 잠시 후 다시 시도해 주시거나, 아래 화면에서 직접 확인해 주세요."
 NO_KNOWLEDGE = ("제가 가진 안내 문서에서는 해당 내용을 찾지 못했어요. "
                 "앱 사용 방법이나 약관·상품 안내, 계좌·소비 관련 질문은 도와드릴 수 있어요.")
@@ -271,6 +271,16 @@ _RENDERERS = {
     "SPENDING_BY_CATEGORY": _spending_by_category, "SPENDING_TOP_MERCHANTS": _top_merchants, "SPENDING_COMPARE": _compare,
     "BUDGET_STATUS": _budget,
 }
+
+
+# ---------- 문장 정리 ----------
+
+def plain_text(text: str) -> str:
+    """모델이 쓴 마크다운 기호를 없앤다(앱 화면은 마크다운을 렌더링하지 않는다). 목록은 '- '로 통일한다."""
+    text = re.sub(r"\*\*(.+?)\*\*", lambda m: m.group(1), text)
+    text = re.sub(r"(?m)^[ \t]*[*•]\s+", "- ", text)
+    text = re.sub(r"(?m)^#{1,6}\s+", "", text)
+    return text.replace("`", "").strip()
 
 
 # ---------- 숫자 검증 ----------

@@ -197,7 +197,7 @@ def compose(state: AgentState, runtime: Runtime[RunCtx]) -> dict:
     facts_only = [e["facts"] for e in state.get("facts", [])]
     if settings.agent_polish_reply and not any(e.get("kind") == "cancel" for e in state.get("facts", [])):
         try:
-            polished = rc.llm.compose(state["message"], draft, facts_only, state.get("history", []))
+            polished = render.plain_text(rc.llm.compose(state["message"], draft, facts_only, state.get("history", [])))
             no_url = re.search(r"https?://|www\.", polished) is None  # 링크는 서버가 만든 것만 나간다
             ok = bool(polished) and no_url and render.numbers_are_grounded(polished, facts_only, extra=state["message"] + draft)
             if ok:

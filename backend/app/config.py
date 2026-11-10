@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
     gemini_timeout: int = 30
+    gemini_api_version: str = "v1beta"   # 시스템 지시문(system instruction)은 v1beta에서 지원된다
     agent_polish_reply: bool = True   # 답변 문장을 모델이 다듬게 할지(숫자 검증을 통과해야만 사용)
     # 카드번호 암호화 키(base64 32바이트). 아래 기본값은 개발 전용이며 .env의 CARD_ENCRYPTION_KEY로 덮어쓴다.
     card_encryption_key: str = "ZGV2LW9ubHktY2FyZC1rZXktMDEyMzQ1Njc4OWFiY2Q="

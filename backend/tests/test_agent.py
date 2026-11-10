@@ -74,9 +74,9 @@ def no_secrets(payload: dict):
 
 # ---------- 기본 ----------
 
-def test_unavailable_without_model_and_requires_login(world):
+def test_unavailable_without_model_and_requires_login(world, monkeypatch):
     set_llm(None)
-    assert settings.gemini_api_key == ""
+    monkeypatch.setattr(settings, "gemini_api_key", "")  # .env에 실제 키가 있어도 '키 없음' 상태를 흉내낸다
     res = world["A"].post("/api/agent/chat", json={"message": "안녕"})
     assert res.status_code == 503 and res.json()["code"] == "AGENT_UNAVAILABLE"
     assert TestClient(app).post("/api/agent/chat", json={"message": "안녕"}).status_code == 401
@@ -462,6 +462,8 @@ def test_polished_reply_is_used_only_when_numbers_match(world, llm):
     assert money(5_600) in draft
     llm.compose_fn = lambda d: "이번 달에는 카드로 " + money(5_600) + "을 쓰셨네요."
     assert chat(a, "이번 달 소비")["reply"] == "이번 달에는 카드로 5,600원을 쓰셨네요."      # 숫자가 맞으면 다듬은 문장
+    llm.compose_fn = lambda d: "**이번 달**에는 카드로 `5,600원`을 쓰셨어요.\n*   스타벅스 5,600원"
+    assert chat(a, "이번 달 소비")["reply"] == "이번 달에는 카드로 5,600원을 쓰셨어요.\n- 스타벅스 5,600원"  # 마크다운 기호는 제거
     llm.compose_fn = lambda d: "이번 달에는 카드로 999,999원을 쓰셨네요."
     assert chat(a, "이번 달 소비")["reply"] == draft                                          # 지어낸 숫자 → 초안으로 되돌림
     llm.compose_fn = lambda d: d.replace("5,600", "6,500")

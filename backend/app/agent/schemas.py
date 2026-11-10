@@ -53,14 +53,14 @@ class Understanding(BaseModel):
     recipient_hint: str | None = Field(default=None, description="받는 사람을 가리키는 말(별칭·이름) 또는 사용자가 말한 계좌번호")
     amount: int | None = Field(default=None, description="원 단위 정수")
     memo: str | None = None
-    category: str | None = Field(default=None, description="소비 카테고리(코드 또는 한글 이름)")
-    merchant: str | None = None
-    direction: Literal["IN", "OUT"] | None = None
+    category: str | None = Field(default=None, description="소비 항목 이름. 식비·카페·간식·교통·쇼핑·생활·마트·의료·문화·여가·통신·구독·교육·송금·이체·기타 중 하나. 항목을 바꾸거나 조회할 때 말에 나온 항목")
+    merchant: str | None = Field(default=None, description="가맹점(상점) 이름. 카테고리를 바꿀 가맹점이나 검색할 가맹점")
+    direction: Literal["IN", "OUT"] | None = Field(default=None, description="OUT=나간·보낸·지출·출금·결제한 거래, IN=들어온·받은·입금된 거래. 말에 방향이 없으면 비움")
     tx_types: list[Literal["DEPOSIT", "WITHDRAW", "TRANSFER", "AUTO_TRANSFER", "CARD"]] = Field(default_factory=list)
     min_amount: int | None = None
     max_amount: int | None = None
     query_text: str | None = Field(default=None, description="거래 검색어 또는 지식 검색 질문")
-    card_hint: str | None = None
+    card_hint: str | None = Field(default=None, description="체크카드를 가리키는 말(끝 4자리, 계좌 별칭). 소비 항목 이름은 여기에 적지 않는다")
     product_hint: str | None = None
     on: bool | None = Field(default=None, description="즐겨찾기를 켜는지(true) 끄는지(false)")
     focus: Literal["profile", "password", "withdraw", "logout", "limit", "lost", "suspend", "reissue", "cancel", "resume"] | None = None

@@ -8,7 +8,7 @@
   backend/.venv/Scripts/python scripts/eval_agent.py --only 5 12   # 번호로 일부만
   backend/.venv/Scripts/python scripts/eval_agent.py -v          # 실패한 건의 이해 결과를 자세히 출력
 
-각 케이스는 (말, 기대 행동 후보, 값 검사, [이전 대화])다. 값 검사는 `필드: 기대값` 형식이며
+각 케이스는 (말, 기대 행동 후보, 값 검사, [이전 대화])다. 행동 후보 중 하나가 첫 행동이어야 하고, "+행동"은 첫 행동이 아니어도 반드시 포함되어야 한다. 값 검사는 `필드: 기대값` 형식이며
 기대값이 정규식이면 re.search, 값이면 같은지 비교한다. 날짜 계산은 코드가 하므로 기간은 relative/month로만 검사한다.
 """
 import argparse
@@ -59,7 +59,7 @@ CASES: list[tuple] = [
     ("이체해줘", ["GO_TRANSFER"], {}, []),
     ("자동이체 등록하고 싶어", ["GO_AUTO_TRANSFER"], {}, []),
     ("1일 이체한도 300만원으로 올려줘", ["GO_CHANGE_LIMIT"], {}, []),
-    ("내 계좌 왜 거래중지야? 풀고 싶어", ["GO_UNLOCK_ACCOUNT"], {}, []),
+    ("내 계좌 왜 거래중지야? 풀고 싶어", ["GO_UNLOCK_ACCOUNT", "KNOWLEDGE_QA", "+GO_UNLOCK_ACCOUNT"], {}, []),  # 이유 설명 + 해제 안내
     ("비상금 계좌 해지하고 싶어", ["GO_CLOSE_ACCOUNT"], {"account_hint": "비상금"}, []),
     ("파킹통장 만들고 싶어", ["GO_OPEN_ACCOUNT"], {"product_hint": "파킹"}, []),
     ("체크카드 새로 발급받고 싶어", ["GO_ISSUE_CARD"], {}, []),
@@ -98,8 +98,13 @@ def _get(obj: dict, path: str):
 def check(u: Understanding, expect_actions: list[str], expect_slots: dict) -> list[str]:
     problems = []
     dump = u.model_dump(mode="json")
-    if expect_actions and (not u.actions or u.actions[0] not in expect_actions):
-        problems.append(f"행동 {u.actions} (기대: {' 또는 '.join(expect_actions)})")
+    first_ok = [a for a in expect_actions if not a.startswith("+")]
+    must_have = [a[1:] for a in expect_actions if a.startswith("+")]   # '+행동'은 첫 행동이 아니어도 반드시 포함되어야 함
+    if first_ok and (not u.actions or u.actions[0] not in first_ok):
+        problems.append(f"행동 {u.actions} (기대: {' 또는 '.join(first_ok)})")
+    for a in must_have:
+        if a not in u.actions:
+            problems.append(f"행동 {u.actions}에 {a}가 없음")
     for key, want in expect_slots.items():
         if key == "!any":  # 어떤 값에도 들어 있으면 안 되는 문자열(PIN 등)
             if want in str(dump):
