@@ -48,7 +48,17 @@ backend/.venv/Scripts/python scripts/verify_spending.py # 소비 집계·원장 
 - 가상 회원은 `demo_a`(주 시연), `demo_b`, `demo_c`이고 비밀번호·PIN은 `.env`의 `DEMO_*` 값이다.
 - 맥/리눅스에서는 `backend/.venv/bin/python`을 쓴다.
 
-### 2. 백엔드·프론트엔드
+### 2. 백엔드 (회원·인증까지 구현됨)
+```bash
+cd backend
+.venv/Scripts/python -m pip install fastapi uvicorn pydantic-settings "psycopg[binary,pool]" pyjwt argon2-cffi cryptography "pydantic[email]" pytest httpx
+.venv/Scripts/python -m uvicorn app.main:app --reload   # http://localhost:8000/docs 에서 API 확인
+.venv/Scripts/python -m pytest -q                       # 테스트(실제 DB 사용, docker compose up 상태여야 함)
+```
+- 인증번호 메일은 Mailpit(http://localhost:8025)에서 확인한다.
+- 구현된 API: 약관, 이메일 인증번호, 회원가입, 로그인(ID/PW·PIN), 로그아웃, 비밀번호 재설정, 내 정보, PIN 확인, 접속 기록. 나머지(계좌·이체·카드·소비·에이전트)는 [docs/api-spec.md](docs/api-spec.md) 기준으로 구현 예정이다.
+
+### 3. 프론트엔드
 설치와 실행 명령은 구현 후 여기에 적는다.
 
 ## 구현한 기능

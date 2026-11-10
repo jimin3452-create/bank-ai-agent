@@ -6,6 +6,7 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "pydantic-settings",
+    "pydantic[email]",
     "psycopg[binary,pool]",
     "pgvector",
     "pyjwt",
@@ -21,3 +22,7 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest", "httpx"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
