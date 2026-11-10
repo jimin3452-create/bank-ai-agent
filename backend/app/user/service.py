@@ -46,6 +46,7 @@ def send_code(conn: Connection, email: str, purpose: str) -> None:
         user = conn.execute("SELECT status FROM users WHERE email = %s", (email,)).fetchone()
         if user is None or user["status"] == "WITHDRAWN":
             return  # 가입 여부를 알려주지 않기 위해 같은 응답을 준다
+    # UNLOCK_ACCOUNT는 로그인한 본인의 이메일로만 호출된다(계좌 API가 사용자 이메일을 넘긴다)
 
     now = _now()
     latest = conn.execute(

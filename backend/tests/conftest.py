@@ -19,11 +19,24 @@ PIN = "135790"
 def _cleanup_db():
     yield
     with psycopg.connect(settings.database_url) as conn:
-        ids = "SELECT id FROM users WHERE login_id LIKE 't\\_%'"
-        for table in ("term_agreements", "login_histories", "notifications"):
-            conn.execute(f"DELETE FROM {table} WHERE user_id IN ({ids})")
-        conn.execute("DELETE FROM users WHERE login_id LIKE 't\\_%'")
-        conn.execute("DELETE FROM verification_codes WHERE email LIKE '%@test.example'")
+        users = "SELECT id FROM users WHERE login_id LIKE 't\\_%'"
+        accounts = f"SELECT id FROM accounts WHERE user_id IN ({users})"
+        cards = f"SELECT id FROM cards WHERE account_id IN ({accounts})"
+        for sql in (
+            f"DELETE FROM statement_requests WHERE account_id IN ({accounts})",
+            f"DELETE FROM account_transactions WHERE account_id IN ({accounts})",
+            f"DELETE FROM card_payments WHERE card_id IN ({cards})",
+            f"DELETE FROM transfers WHERE from_account_id IN ({accounts}) OR to_account_id IN ({accounts})",
+            f"DELETE FROM auto_transfers WHERE from_account_id IN ({accounts}) OR to_account_id IN ({accounts})",
+            f"DELETE FROM cards WHERE account_id IN ({accounts})",
+            f"DELETE FROM accounts WHERE user_id IN ({users})",
+            f"DELETE FROM term_agreements WHERE user_id IN ({users})",
+            f"DELETE FROM login_histories WHERE user_id IN ({users})",
+            f"DELETE FROM notifications WHERE user_id IN ({users})",
+            "DELETE FROM users WHERE login_id LIKE 't\\_%'",
+            "DELETE FROM verification_codes WHERE email LIKE '%@test.example'",
+        ):
+            conn.execute(sql)
 
 
 @pytest.fixture()
@@ -65,3 +78,48 @@ def signup_user(client, outbox, **overrides) -> dict:
     res = client.post("/api/auth/signup", json=body)
     assert res.status_code == 201, res.text
     return {**ident, "password": PASSWORD, "pin": PIN, "id": res.json()["id"]}
+
+
+@pytest.fixture()
+def files(monkeypatch):
+    """첨부 메일(거래내역 CSV)을 가로챈다."""
+    sent = []
+    monkeypatch.setattr(mailer, "send_mail_attachment",
+                        lambda to, subject, body, filename, data: sent.append(
+                            {"to": to, "subject": subject, "body": body, "filename": filename, "data": data}))
+    return sent
+
+
+def login(client, user: dict) -> None:
+    res = client.post("/api/auth/login", json={"login_id": user["login_id"], "password": user["password"]})
+    assert res.status_code == 200, res.text
+
+
+def account_terms(client) -> list[int]:
+    return [t["id"] for t in client.get("/api/terms?category=ACCOUNT_OPEN").json() if t["required"]]
+
+
+def product_id(client, name: str) -> int:
+    return next(p["id"] for p in client.get("/api/products").json() if p["product_name"] == name)
+
+
+def open_account(client, name: str = "기본 입출금통장", **overrides) -> dict:
+    body = {"product_id": product_id(client, name), "account_password": "1357", "account_password_confirm": "1357",
+            "purpose": "SALARY", "income_source": "SALARY_INCOME", "agreed_term_ids": account_terms(client), **overrides}
+    res = client.post("/api/accounts", json=body)
+    assert res.status_code == 201, res.text
+    return res.json()
+
+
+def new_user_session(client, outbox, birth: str | None = "1990-05-20", **overrides) -> dict:
+    """가입 + 로그인까지 끝낸 사용자. 같은 client의 쿠키에 로그인 상태가 남는다."""
+    user = signup_user(client, outbox, birth=birth, **overrides)
+    login(client, user)
+    return user
+
+
+def sql(query: str, params=()):
+    """테스트 데이터 준비·검증용 직접 SQL."""
+    with psycopg.connect(settings.database_url, row_factory=psycopg.rows.dict_row) as conn:
+        cur = conn.execute(query, params)
+        return cur.fetchall() if cur.description else None

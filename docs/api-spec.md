@@ -48,17 +48,18 @@
 | GET | `/api/products/{id}/eligibility` | 내가 이 상품에 가입 가능한지 확인(연령·개설 수) | B1.1 |
 | GET | `/api/terms?category=ACCOUNT_OPEN` | 계좌개설 약관 | B1.2 |
 | POST | `/api/accounts` | 계좌 개설 `{product_id, account_password, opening_info, agreed_term_ids}` | B1.1~B1.8 |
-| GET | `/api/accounts` | 내 계좌 목록(즐겨찾기 우선, 번호 마스킹) | B2.1 |
+| GET | `/api/accounts` | 내 계좌 목록(즐겨찾기 우선, 번호 마스킹, 해지 계좌는 `?include_closed=true`일 때만) | B2.1 |
 | GET | `/api/accounts/{id}` | 계좌 상세(상태·한도·잔액) | B2.2, B2.8 |
 | GET | `/api/accounts/{id}/transactions` | 거래내역 `?from&to&direction&type&min_amount&max_amount&q&sort&page` | B2.3~B2.6 |
 | GET | `/api/accounts/{id}/transactions/{txId}` | 거래 상세 | B2.4 |
-| POST | `/api/accounts/{id}/statements` | 거래내역 다운로드 신청 `{from, to, email}` | B2.7 |
+| POST | `/api/accounts/{id}/statements` | 거래내역 다운로드 신청 `{from, to, email?}`. CSV를 이메일로 바로 보내고 `{id, status: SENT\|FAILED, count, message}`를 돌려줌 | B2.7 |
 | GET | `/api/accounts/{id}/statements` | 신청 내역·상태 | B2.7 |
 | PUT | `/api/accounts/{id}/favorite` | 즐겨찾기 등록·해제 `{is_favorite}` | B3.1 |
 | PUT | `/api/accounts/{id}/nickname` | 별칭 변경 | B2.1 |
 | PUT | `/api/accounts/{id}/limits` | 이체한도 변경(PIN) `{daily_limit, month_limit}` | B3.2 |
 | GET | `/api/accounts/{id}/limits` | 한도·오늘/이번 달 사용량 | B2.8, B3.2 |
-| POST | `/api/accounts/{id}/unlock` | 거래중지 해제(이메일 인증번호) | B3.3.2 |
+| POST | `/api/accounts/{id}/unlock/email-code` | 거래중지 해제용 인증번호를 내 이메일로 발송(거래중지 상태에서만) | B3.3.2 |
+| POST | `/api/accounts/{id}/unlock` | 거래중지 해제 `{code}` | B3.3.2 |
 | GET | `/api/accounts/{id}/close-check` | 해지 가능 여부와 제한 사유 | B4.1 |
 | POST | `/api/accounts/{id}/close` | 해지(PIN) | B4.2~B4.3 |
 | POST | `/api/accounts/{id}/verify-password` | 통장 비밀번호 확인(실패 횟수 누적) | B1.3, 공통 |
