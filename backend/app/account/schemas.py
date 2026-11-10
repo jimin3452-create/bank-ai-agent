@@ -1,4 +1,5 @@
 import re
+import uuid
 from datetime import date
 from typing import Literal
 
@@ -105,3 +106,10 @@ class StatementRequest(BaseModel):
     from_date: date = Field(alias="from")
     to_date: date = Field(alias="to")
     email: EmailStr | None = None
+
+
+class DevDepositRequest(BaseModel):
+    account_id: uuid.UUID
+    amount: int = Field(gt=0, le=1_000_000_000)
+    counterparty_name: str = Field(default="시연 입금", min_length=1, max_length=100)
+    memo: str | None = Field(default=None, max_length=100)

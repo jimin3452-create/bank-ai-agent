@@ -390,3 +390,21 @@ def list_statements(conn: Connection, user_id, account_id) -> list[dict]:
     get_owned_account(conn, user_id, account_id)
     return conn.execute("SELECT id, from_date, to_date, email, status, created_at FROM statement_requests "
                         "WHERE account_id = %s ORDER BY id DESC LIMIT 50", (account_id,)).fetchall()
+
+
+# ---------- 입금 시뮬레이터 (DEV-2) ----------
+
+def simulate_deposit(conn: Connection, user_id, account_id, amount: int, counterparty_name: str, memo: str | None) -> dict:
+    """개발용: 은행 외부 입금을 흉내낸다. 정상 계좌에만 입금된다(거래중지·해지 계좌는 입금도 차단)."""
+    a = get_owned_account(conn, user_id, account_id)
+    conn.execute("SELECT 1 FROM accounts WHERE id = %s FOR NO KEY UPDATE", (account_id,))
+    a = get_owned_account(conn, user_id, account_id)  # 잠근 뒤 최신 잔액·상태를 다시 읽는다
+    if a["status"] != "ACTIVE":
+        raise AppError(400, "ACCOUNT_STATUS_BLOCKED", "거래중지 또는 해지된 계좌에는 입금할 수 없습니다")
+    new_balance = a["balance"] + amount
+    conn.execute("UPDATE accounts SET balance = %s WHERE id = %s", (new_balance, account_id))
+    conn.execute(
+        "INSERT INTO account_transactions (account_id, transaction_type, transaction_direction, amount, new_balance, "
+        "counterparty_name, memo, transaction_at) VALUES (%s,'DEPOSIT','IN',%s,%s,%s,%s,%s)",
+        (account_id, amount, new_balance, counterparty_name, memo, datetime.now(timezone.utc)))
+    return {"account_id": account_id, "amount": amount, "balance": new_balance}

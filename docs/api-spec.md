@@ -85,7 +85,7 @@
 | 메서드 | 경로 | 설명 | 기능 ID |
 |---|---|---|---|
 | POST | `/api/cards` | 발급 `{account_id, daily_limit, overseas_enabled, card_network}` | D1.1 |
-| GET | `/api/cards` | 목록(끝 4자리만) | D1.2 |
+| GET | `/api/cards` | 목록(끝 4자리만 표시, 사용 가능한 카드만. 해지·재발급된 카드까지 보려면 `?include_inactive=true`) | D1.2 |
 | GET | `/api/cards/{id}` | 상세 | D1.3 |
 | GET | `/api/cards/{id}/payments` | 사용내역 `?from&to` | D1.3 |
 | PATCH | `/api/cards/{id}/settings` | 한도·해외결제 변경(PIN) | D1.3 |
@@ -95,7 +95,8 @@
 | POST | `/api/cards/{id}/reissue` | 재발급(PIN) | D1.4 |
 | POST | `/api/cards/{id}/cancel` | 해지(PIN) | D1.7 |
 | GET | `/api/notifications` | 알림 목록 `?unread=` | D1.5, A2.4, C2.1 |
-| PUT | `/api/notifications/{id}/read` | 읽음 처리 | D1.5 |
+| PUT | `/api/notifications/{id}/read` | 읽음 처리(본인 알림만) | D1.5 |
+| PUT | `/api/notifications/read-all` | 모두 읽음 처리 | D1.5 |
 
 ## 6. 소비(E)
 
@@ -163,7 +164,7 @@
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | `/api/dev/card-payments` | 카드 결제 시뮬레이터 `{card_id, amount, place, overseas}` |
+| POST | `/api/dev/card-payments` | 카드 결제 시뮬레이터 `{card_id, amount, place, overseas}`. 승인되면 카드 결제·거래원장·`CARD_PAYMENT` 알림이 만들어지고 계좌에서 바로 차감됨. 거절 사유(`CARD_STATUS_BLOCKED`, `ACCOUNT_STATUS_BLOCKED`, `OVERSEAS_DISABLED`, `INSUFFICIENT_BALANCE`, `LIMIT_EXCEEDED`)는 400이며 아무것도 기록하지 않음. 본인 카드만 사용 가능 |
 | POST | `/api/dev/deposits` | 입금 시뮬레이터 `{account_id, amount, counterparty_name, memo}` |
 | POST | `/api/dev/run-auto-transfers` | 자동이체 스케줄러 즉시 실행 `{today?}`(시연·테스트용, `today`로 실행 기준 날짜를 흉내냄). 로그인 필요, `APP_ENV=dev`에서만 동작 |
 | GET | `/health` | 헬스 체크 |

@@ -6,8 +6,10 @@ from fastapi import APIRouter, Query
 
 from app.account import service
 from app.account.schemas import (AccountPasswordRequest, CloseRequest, FavoriteRequest, LimitsRequest,
-                                 NicknameRequest, OpenAccountRequest, StatementRequest, TxType, UnlockRequest)
+                                 NicknameRequest, OpenAccountRequest, DevDepositRequest, StatementRequest, TxType, UnlockRequest)
 from app.common.deps import CurrentUser, Db
+from app.common.errors import AppError
+from app.config import settings
 
 router = APIRouter(prefix="/api")
 
@@ -114,3 +116,11 @@ def close_check(account_id: uuid.UUID, conn: Db, user: CurrentUser):
 @router.post("/accounts/{account_id}/close")
 def close(account_id: uuid.UUID, body: CloseRequest, conn: Db, user: CurrentUser):
     return service.close_account(conn, user, account_id, body.pin)
+
+
+@router.post("/dev/deposits", status_code=201)
+def dev_deposit(body: DevDepositRequest, conn: Db, user: CurrentUser):
+    """개발용 입금 시뮬레이터. 운영(`APP_ENV`가 dev가 아님)에서는 막는다."""
+    if settings.app_env != "dev":
+        raise AppError(404, "NOT_FOUND", "찾을 수 없습니다")
+    return service.simulate_deposit(conn, user["id"], body.account_id, body.amount, body.counterparty_name, body.memo)
