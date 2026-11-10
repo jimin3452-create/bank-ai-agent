@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS "budgets" (
 	"budget_month" DATE NOT NULL,
 	-- 예산 금액 (원)
 	"amount" BIGINT NOT NULL,
+	-- 마지막으로 보낸 알림 단계: 0 없음 / 80 / 100 (같은 단계 알림 중복 방지)
+	"alert_level" SMALLINT NOT NULL DEFAULT 0,
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
 	PRIMARY KEY("id")
 );

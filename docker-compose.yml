@@ -13,6 +13,7 @@ services:
       - ./db/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
       - ./db/002_spending.sql:/docker-entrypoint-initdb.d/002_spending.sql:ro
       - ./db/003_rag.sql:/docker-entrypoint-initdb.d/003_rag.sql:ro
+      - ./db/004_product_conditions.sql:/docker-entrypoint-initdb.d/004_product_conditions.sql:ro
 
   mailpit:
     image: axllent/mailpit

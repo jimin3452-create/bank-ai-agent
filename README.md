@@ -1,25 +1,76 @@
 # Bank AI Agent
 
-모바일 웹 인터넷뱅킹에 소비패턴 관리 에이전트(챗 + 리포트 + RAG)를 붙이는 프로젝트.
+은행 모바일 웹서비스 클론에 자연어 에이전트(챗 + RAG)와 소비패턴 관리를 붙이는 중간 프로젝트.
+
+## 제출물 체크리스트
+| 제출물 | 위치 | 상태 |
+|---|---|---|
+| 기획 자료 (기능 목록, 이용 흐름, DB 구조 등) | [docs/](docs/) | 작성됨 |
+| 실행 코드 | `backend/`, `frontend/`, `db/`, `scripts/` | 구현 전 |
+| 실행 안내(README) | 이 문서 | 구현 후 완성 |
+| 회고 | [docs/retrospective.md](docs/retrospective.md) | 진행 기록 중 |
 
 ## 문서
-- [docs/product-spec.md](docs/product-spec.md): 금융앱 기본 기능 기획·설계
-- [docs/agent-spec.md](docs/agent-spec.md): 소비패턴 관리 에이전트 기획
-- [docs/term-mapping.md](docs/term-mapping.md): 한글명 = 영문 테이블·컬럼 매핑
+| 문서 | 내용 |
+|---|---|
+| [docs/product-spec.md](docs/product-spec.md) | 금융앱 기본 기능 기획·설계 (기능 목록, 이용 흐름, 화면, 테스트, DB) |
+| [docs/agent-spec.md](docs/agent-spec.md) | 자연어 에이전트 기획 (기능 커버리지, 소비 정의, LangGraph, RAG) |
+| [docs/decisions.md](docs/decisions.md) | 미정이던 정책값의 확정안 |
+| [docs/api-spec.md](docs/api-spec.md) | API 명세와 화면 링크 허용 목록 |
+| [docs/agent-prompts.md](docs/agent-prompts.md) | 에이전트 프롬프트·되묻기 규칙 |
+| [docs/seed-data.md](docs/seed-data.md) | 가상 데이터 설계 |
+| [docs/term-mapping.md](docs/term-mapping.md) | 한글명 = 영문 테이블·컬럼 매핑 |
 
 ## 폴더
 | 폴더 | 내용 |
 |---|---|
-| `db/` | PostgreSQL 스키마(`001_init.sql` 기본, `002_spending.sql` 소비 확장, `003_rag.sql` RAG)와 `seed/` |
+| `db/` | PostgreSQL 스키마 `001_init.sql`(기본), `002_spending.sql`(소비), `003_rag.sql`(RAG), `004_product_conditions.sql`(상품 가입 조건)와 `seed/` |
 | `backend/` | Python + FastAPI. 기능별 폴더(`user`, `account`, `transfer`, `card`, `notification`, `spending`, `agent`) |
 | `frontend/` | Next.js (모바일 웹) |
-| `knowledge/` | RAG 지식 문서 원본(FAQ·소비 가이드 등) |
-| `scripts/` | 가상 데이터 생성, 지식 문서 임베딩 적재 등 |
+| `knowledge/` | RAG 지식 문서 원본(FAQ·소비 가이드) |
+| `scripts/` | 가상 데이터 생성, 지식 문서 적재 |
 
-## 실행 (뼈대 단계)
+## 기술스택
+Python 3.12 · FastAPI · PostgreSQL 16(pgvector) · SQL 직접 작성(`psycopg`) · LangGraph/LangChain · Gemini API · Next.js · Docker Compose
+
+## 실행 방법 (구현하면서 채운다)
 ```bash
-cp .env.example .env      # 값 채우기
+cp .env.example .env      # 값 채우기 (GEMINI_API_KEY 등, .env는 커밋하지 않음)
 docker compose up -d      # PostgreSQL(pgvector) + Mailpit
 ```
+백엔드·프론트엔드 설치와 실행 명령은 구현 후 여기에 적는다.
 
-구현은 아직 시작 전이다. 백엔드·프론트엔드 설치와 실행 방법은 구현하면서 이 문서에 추가한다.
+## 구현한 기능
+(구현 후 작성. 기능 ID는 [docs/agent-spec.md](docs/agent-spec.md) 1.3절 기준)
+
+## 확인해 볼 사용 흐름
+(구현 후 작성. [docs/product-spec.md](docs/product-spec.md) 7절 FLOW-001~010 기준으로 데모 계정 `demo_a`로 확인)
+
+## 자연어 요청 예시
+| 요청 | 기대 동작 |
+|---|---|
+| "이번 달 카페에 얼마 썼어?" → "지난달은?" | 소비 조회, 후속 질문 맥락 유지 |
+| "이체해줘" | 받는 사람·금액을 되묻고, 이체 화면 링크로 안내 |
+| "민수한테 5만원 보내줘" | 받는 계좌·금액이 채워진 이체 화면 링크 |
+| "식비 예산 40만원으로 설정해줘" | 확인 후 예산 저장 |
+| "청년 통장 가입 조건이 뭐야?" | 상품 정보·약관 검색(RAG)으로 답변, 출처 표시 |
+| "거래중지는 어떻게 풀어?" | FAQ 근거로 안내와 해당 화면 링크 |
+| "카드 분실했어" | 카드 분실 신고 화면 링크와 긴급 안내 |
+
+## 동작 확인 결과
+구현한 기능과 직접 선정한 실패 상황의 확인 결과를 아래에 기록한다. (테스트 ID는 [docs/product-spec.md](docs/product-spec.md) 10절, [docs/agent-spec.md](docs/agent-spec.md) 10절)
+
+| 구분 | 상황 | 기대 결과 | 결과 |
+|---|---|---|---|
+| 실패 | 잔액 부족·한도 초과·거래중지 계좌로 이체 | 처리 차단, 잔액·원장 변경 없음 | 미실행 |
+| 실패 | 같은 이체 요청을 두 번 전송 | 한 번만 처리 | 미실행 |
+| 실패 | 다른 회원의 계좌·카드 ID로 직접 조회 | 차단, 정보 미노출 | 미실행 |
+| 실패 | 로그인 5회 실패 | 계정 잠금 | 미실행 |
+| 실패 | 잔액이 남은 계좌 해지 | 제한 사유와 함께 차단 | 미실행 |
+| 실패 | 만료된 이메일 인증번호 사용 | 인증 실패 안내 | 미실행 |
+| 실패 | 에이전트에 PIN을 말하며 이체 요청 | PIN 미사용, 이체 화면 링크만 안내 | 미실행 |
+| 실패 | 문서에 없는 질문 | 근거 없음 안내, 지어내지 않음 | 미실행 |
+| 실패 | LLM 호출 실패 | 재시도 안내와 관련 화면 링크 | 미실행 |
+
+## 미해결 제한
+[docs/agent-spec.md](docs/agent-spec.md) 12절 참조.
