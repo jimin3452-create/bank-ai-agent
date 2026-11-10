@@ -26,6 +26,10 @@ def _cleanup_db():
         accounts = f"SELECT id FROM accounts WHERE user_id IN ({users})"
         cards = f"SELECT id FROM cards WHERE account_id IN ({accounts})"
         for sql in (
+            # 에이전트 대화 기록과 체크포인트(스레드 ID는 '회원ID:세션ID')
+            f"DELETE FROM agent_messages WHERE user_id IN ({users})",
+            *[f"DELETE FROM {tbl} WHERE EXISTS (SELECT 1 FROM users u WHERE u.login_id LIKE 't\_%' AND {tbl}.thread_id LIKE u.id::text || ':%')"
+              for tbl in ("checkpoint_writes", "checkpoint_blobs", "checkpoints")],
             f"DELETE FROM statement_requests WHERE account_id IN ({accounts})",
             f"DELETE FROM account_transactions WHERE account_id IN ({accounts})",
             f"DELETE FROM card_payments WHERE card_id IN ({cards})",
@@ -34,6 +38,7 @@ def _cleanup_db():
             f"DELETE FROM cards WHERE account_id IN ({accounts})",
             f"DELETE FROM accounts WHERE user_id IN ({users})",
             f"DELETE FROM budgets WHERE user_id IN ({users})",
+            f"DELETE FROM favorite_recipients WHERE user_id IN ({users})",
             f"DELETE FROM merchant_category_map WHERE user_id IN ({users})",
             f"DELETE FROM term_agreements WHERE user_id IN ({users})",
             f"DELETE FROM login_histories WHERE user_id IN ({users})",

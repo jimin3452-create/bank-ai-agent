@@ -139,7 +139,9 @@
   "pending_action": {"action_id": "uuid", "summary": "식비 월 예산을 400,000원으로 설정할까요?"}
 }
 ```
-- `evidence`·`sources`·`links`·`pending_action`은 해당할 때만 포함한다.
+- `evidence`·`sources`·`links`·`pending_action`은 해당할 때만 포함한다. 모델 오류로 답을 못 만들었으면 `degraded: true`(홈 링크 포함), 24시간 넘게 쉰 세션에 이어 말하면 새 세션으로 시작하고 `session_renewed: true`와 새 `session_id`를 돌려준다.
+- 확인을 기다리는 요청(`pending_action`)이 있을 때 사용자가 말로 "네"/"아니"라고 답해도 같은 처리가 되고(`POST /chat`), 전혀 다른 말을 하면 이전 요청은 취소된다. 같은 `action_id`는 한 번만 처리된다(두 번째는 409 `NO_PENDING_ACTION`).
+- 에이전트가 쓸 수 없는 상태(Gemini 키 미설정)이면 `POST /chat`은 503 `AGENT_UNAVAILABLE`을 돌려준다.
 - `links`의 `route`는 아래 **화면 허용 목록**에 있는 경로만 서버가 만든다. 모델이 만든 URL은 사용하지 않는다.
 
 **화면 허용 목록(링크 대상)**
@@ -151,19 +153,19 @@
 | SCR-003 | `/home` | - |
 | SCR-004 | `/accounts/new` | `product_id` |
 | SCR-005 | `/accounts/{id}` | `from`, `to`, `type`, `q` |
-| SCR-006 | `/transfer` | `from_account_id`, `to_account_num`, `amount`, `memo` |
-| SCR-007 | `/auto-transfers` | `from_account_id`, `to_account_num`, `amount`, `cycle`, `run_day` |
+| SCR-006 | `/transfer` | `from_account_id`, `recipient_id`(자주 쓰는 계좌 ID), `to_account_num`(사용자가 직접 말한 번호), `amount`, `memo` |
+| SCR-007 | `/auto-transfers` | `from_account_id`, `recipient_id`, `to_account_num`, `amount`, `cycle`, `run_day` |
 | SCR-008 | `/cards` | - |
 | SCR-009 | `/accounts/{id}/manage` | `focus=limit\|unlock\|favorite` |
 | SCR-010 | `/accounts/{id}/close` | - |
-| SCR-011 | `/cards/{id}` | `focus=limit\|lost\|suspend\|reissue\|cancel` |
+| SCR-011 | `/cards/{id}` | `focus=limit\|lost\|suspend\|resume\|reissue\|cancel` |
 | SCR-012 | `/cards/new` | `account_id` |
-| SCR-013 | `/me` | `focus=profile\|password\|withdraw` |
+| SCR-013 | `/me` | `focus=profile\|password\|withdraw\|logout` |
 | SCR-014 | `/spending` | `month` |
 | SCR-015 | `/agent` | - |
 | SCR-016 | `/spending/budget` | `month` |
 
-링크에 넣는 값은 이체 금액·받는 계좌처럼 사용자가 말한 값뿐이며, PIN·비밀번호·인증번호는 어떤 링크에도 넣지 않는다.
+링크에 넣는 값은 이체 금액·받는 계좌처럼 사용자가 말한 값뿐이며, PIN·비밀번호·인증번호는 어떤 링크에도 넣지 않는다. 자주 쓰는 계좌는 번호 대신 `recipient_id`로 넘기고(주소창·로그에 계좌번호를 남기지 않기 위해), 사용자가 계좌번호를 직접 말했을 때만 `to_account_num`을 쓴다. 허용되지 않은 값은 서버가 버린다.
 
 ## 8. 개발용 API (운영 제외, `APP_ENV=dev`에서만)
 
