@@ -13,6 +13,7 @@ from psycopg import Connection
 from app.account import service as account_service
 from app.common.errors import AppError
 from app.common.mask import mask_account_num, mask_name
+from app.spending import service as spending_service
 from app.user import service as user_service
 
 log = logging.getLogger(__name__)
@@ -109,6 +110,8 @@ def execute_transfer(conn: Connection, *, from_id, to_id, amount: int, memo: str
     conn.execute(sql, (from_id, tid, typ, "OUT", amount, new_src, dst["user_name"], dst["account_num"], memo, now))
     conn.execute(sql, (to_id, tid, typ, "IN", amount, new_dst, src["user_name"], src["account_num"], memo, now))
     conn.execute("UPDATE transfers SET status = 'SUCCESS', complete_at = %s WHERE id = %s", (now, tid))
+    if src["user_id"] != dst["user_id"]:  # 타인 명의 이체만 소비이므로 예산 알림 대상
+        spending_service.after_consumption(conn, src["user_id"], now)
     return {"transfer": conn.execute("SELECT * FROM transfers WHERE id = %s", (tid,)).fetchone(),
             "fail": None, "replayed": False}
 

@@ -33,6 +33,8 @@ def _cleanup_db():
             f"DELETE FROM auto_transfers WHERE from_account_id IN ({accounts}) OR to_account_id IN ({accounts})",
             f"DELETE FROM cards WHERE account_id IN ({accounts})",
             f"DELETE FROM accounts WHERE user_id IN ({users})",
+            f"DELETE FROM budgets WHERE user_id IN ({users})",
+            f"DELETE FROM merchant_category_map WHERE user_id IN ({users})",
             f"DELETE FROM term_agreements WHERE user_id IN ({users})",
             f"DELETE FROM login_histories WHERE user_id IN ({users})",
             f"DELETE FROM notifications WHERE user_id IN ({users})",

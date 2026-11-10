@@ -8,6 +8,7 @@ from app.common.db import close_pool, open_pool
 from app.common.errors import register_error_handlers
 from app.config import settings
 from app.notification.router import router as notification_router
+from app.spending.router import router as spending_router
 from app.transfer import scheduler
 from app.transfer.router import router as transfer_router
 from app.user.router import router as user_router
@@ -30,6 +31,7 @@ app.include_router(account_router)
 app.include_router(transfer_router)
 app.include_router(card_router)
 app.include_router(notification_router)
+app.include_router(spending_router)
 
 
 @app.get("/health")

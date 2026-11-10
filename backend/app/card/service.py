@@ -10,6 +10,7 @@ from psycopg import Connection
 from app.account.service import KST, months_ago, require_active, start_of_day, today_kst
 from app.common.crypto import decrypt_card_number, encrypt_card_number, luhn_number
 from app.common.errors import AppError
+from app.spending import service as spending_service
 from app.user import service as user_service
 
 USABLE = ("ACTIVE", "SUSPENDED", "LOST")        # 계좌에 연결된 것으로 보는 상태(계좌당 1장)
@@ -211,5 +212,6 @@ def simulate_payment(conn: Connection, user: dict, card_id, amount: int, place: 
     last4 = decrypt_card_number(c["card_number"])[-4:]
     conn.execute("INSERT INTO notifications (user_id, type, message, created_at) VALUES (%s,'CARD_PAYMENT',%s,%s)",
                  (user["id"], f"{place}에서 {amount:,}원이 결제되었습니다. (체크카드 {last4})", now))
+    spending_service.after_consumption(conn, user["id"], now)  # 예산 80%·100% 도달 알림
     return {"id": pay["id"], "card_id": card_id, "amount": amount, "place": place, "approved_at": now,
             "balance_after": new_balance, "overseas": overseas}

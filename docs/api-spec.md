@@ -111,7 +111,10 @@
 | PUT | `/api/budgets` | 예산 설정 `{month, category_code?, amount}` | E3 |
 | DELETE | `/api/budgets/{id}` | 예산 삭제 | E3 |
 | GET | `/api/spending/categories` | 카테고리 목록 | E5 |
-| PUT | `/api/spending/merchant-category` | 가맹점 카테고리 보정 `{merchant, category_code}` | E5 |
+| GET | `/api/spending/compare?month_a=&month_b=` | 두 달 비교(총액·카테고리별 증감, 증가 큰 순) | E1, 에이전트 `compare_periods` |
+| GET | `/api/spending/unclassified?month=` | 룰·보정에 없어 '기타'로 보이는 가맹점 목록 | E5 |
+| PUT | `/api/spending/merchant-category` | 가맹점 카테고리 보정 `{merchant, category_code}`. 지점명이 달라도 같은 가맹점으로 보정되고(정규화 키), 그 회원에게만 적용됨. `TRANSFER`는 지정 불가 | E5 |
+| DELETE | `/api/spending/merchant-category?merchant=` | 사용자 보정 되돌리기(공통 룰은 지울 수 없음) | E5 |
 
 ## 7. 에이전트
 
