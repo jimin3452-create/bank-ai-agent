@@ -22,6 +22,12 @@ def close_pool() -> None:
         _pool = None
 
 
+def connection():
+    """요청 밖(스케줄러 등)에서 연결을 빌릴 때 쓴다. 정상 종료면 커밋, 예외면 롤백."""
+    assert _pool is not None, "DB 풀이 열려 있지 않습니다"
+    return _pool.connection()
+
+
 def get_db() -> Iterator[Connection]:
     """요청마다 연결 하나를 빌려준다. 정상 종료면 커밋, 예외면 롤백한다.
 

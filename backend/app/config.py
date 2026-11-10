@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     smtp_host: str = "localhost"
     smtp_port: int = 1025
     cookie_secure: bool = False
+    scheduler_enabled: bool = True
 
 
 settings = Settings()

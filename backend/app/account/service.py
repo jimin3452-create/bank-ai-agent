@@ -238,15 +238,19 @@ def set_nickname(conn: Connection, user_id, account_id, nickname: str) -> dict:
     return account_detail(conn, user_id, account_id)
 
 
-def limit_usage(conn: Connection, account_id) -> dict:
-    """오늘·이번 달(KST) 이체 사용량. 성공·처리중 이체를 합산한다(즉시이체·자동이체 포함)."""
+def limit_usage(conn: Connection, account_id, exclude_id=None) -> dict:
+    """오늘·이번 달(KST) 이체 사용량. 성공·처리중 이체를 합산한다(즉시이체·자동이체 포함).
+
+    exclude_id는 지금 처리 중인 이체 자신을 빼기 위한 값이다.
+    """
     today = today_kst()
     day_start, month_start = start_of_day(today), start_of_day(today.replace(day=1))
     row = conn.execute(
         "SELECT COALESCE(SUM(amount) FILTER (WHERE request_at >= %s), 0)::bigint AS today, "
         "COALESCE(SUM(amount), 0)::bigint AS month FROM transfers "
-        "WHERE from_account_id = %s AND status IN ('SUCCESS', 'PENDING') AND request_at >= %s",
-        (day_start, account_id, month_start)).fetchone()
+        "WHERE from_account_id = %s AND status IN ('SUCCESS', 'PENDING') AND request_at >= %s "
+        "AND (%s::uuid IS NULL OR id <> %s::uuid)",
+        (day_start, account_id, month_start, exclude_id, exclude_id)).fetchone()
     return {"used_today": row["today"], "used_month": row["month"]}
 
 

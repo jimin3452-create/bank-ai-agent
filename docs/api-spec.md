@@ -69,16 +69,16 @@
 | 메서드 | 경로 | 설명 | 기능 ID |
 |---|---|---|---|
 | GET | `/api/recipients/lookup?account_num=` | 받는 분 확인(마스킹된 예금주) | C1.1 |
-| POST | `/api/transfers` | 즉시이체 `{from_account_id, to_account_num, amount, memo, pin}` + `Idempotency-Key` | C1.1~C1.2 |
-| GET | `/api/transfers/by-key/{key}` | 중복 방지 키로 결과 조회(응답 유실 대비) | C1.1 |
+| POST | `/api/transfers` | 즉시이체 `{from_account_id, to_account_num, amount, memo?, pin}` + **`Idempotency-Key` 헤더(8~100자, 필수)**. 처음 처리하면 201, 같은 키를 다시 보내면 새로 처리하지 않고 기존 결과를 200(`replayed: true`)으로 돌려줌. 같은 키에 다른 내용을 보내면 409. 잔액·한도·상태 오류는 400이며 이체가 `FAILED`로 기록됨 | C1.1~C1.2 |
+| GET | `/api/transfers/by-key/{key}` | 중복 방지 키로 결과 조회(응답 유실 대비, 보낸 사람만) | C1.1 |
 | GET | `/api/transfers/{id}` | 이체 상세 | C1 |
 | GET | `/api/recipients/recent` | 최근 받은 계좌(이체 내역에서 조회) | C3 |
 | GET | `/api/recipients/favorites` | 자주 쓰는 받는 계좌 | C3 |
 | POST | `/api/recipients/favorites` | 등록 `{account_num, alias}` | C3 |
 | DELETE | `/api/recipients/favorites/{id}` | 해제 | C3 |
 | GET | `/api/auto-transfers` | 자동이체 목록 | C2.1 |
-| POST | `/api/auto-transfers` | 등록(PIN) | C2.1 |
-| DELETE | `/api/auto-transfers/{id}` | 해지(PIN) | C2.3 |
+| POST | `/api/auto-transfers` | 등록(PIN) `{from_account_id, to_account_num, amount, memo?, cycle, run_day, start_date, end_date?, pin}`. 시작일은 **내일 이후**만 가능(등록 당일 실행 없음) | C2.1 |
+| POST | `/api/auto-transfers/{id}/cancel` | 해지(PIN) `{pin}`. 본문이 필요해 DELETE 대신 POST를 쓴다 | C2.3 |
 
 ## 5. 카드 (D)
 
@@ -165,5 +165,5 @@
 |---|---|---|
 | POST | `/api/dev/card-payments` | 카드 결제 시뮬레이터 `{card_id, amount, place, overseas}` |
 | POST | `/api/dev/deposits` | 입금 시뮬레이터 `{account_id, amount, counterparty_name, memo}` |
-| POST | `/api/dev/run-auto-transfers` | 자동이체 스케줄러 즉시 실행(시연·테스트용) |
+| POST | `/api/dev/run-auto-transfers` | 자동이체 스케줄러 즉시 실행 `{today?}`(시연·테스트용, `today`로 실행 기준 날짜를 흉내냄). 로그인 필요, `APP_ENV=dev`에서만 동작 |
 | GET | `/health` | 헬스 체크 |

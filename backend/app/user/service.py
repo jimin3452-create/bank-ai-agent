@@ -221,7 +221,8 @@ def login_pin(conn: Connection, login_id: str, pin: str, ip, ua) -> tuple[str, d
 def verify_pin(conn: Connection, user: dict, pin: str) -> None:
     """이체·한도 변경 같은 민감 동작 전 PIN 확인. 틀린 횟수가 5회가 되면 계정이 잠긴다."""
     if verify_secret(user["pin"], pin):
-        conn.execute("UPDATE users SET pin_fail_count = 0 WHERE id = %s", (user["id"],))
+        if user["pin_fail_count"]:  # 실패 기록이 있을 때만 갱신한다(불필요한 행 잠금 방지)
+            conn.execute("UPDATE users SET pin_fail_count = 0 WHERE id = %s", (user["id"],))
         return
     left = _register_failure(conn, user, "pin_fail_count")
     conn.commit()

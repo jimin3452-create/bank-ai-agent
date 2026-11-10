@@ -1,4 +1,5 @@
 """테스트 공통. 실제 PostgreSQL(docker compose의 db)에 연결하고, 메일은 전송 대신 가로채 인증번호를 꺼낸다."""
+import os
 import random
 import re
 import uuid
@@ -6,6 +7,8 @@ import uuid
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
+
+os.environ["SCHEDULER_ENABLED"] = "false"  # 테스트에서는 스케줄러를 켜지 않는다(필요하면 직접 호출)
 
 from app.common import mailer
 from app.config import settings
