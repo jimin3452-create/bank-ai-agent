@@ -34,11 +34,22 @@
 Python 3.12 · FastAPI · PostgreSQL 16(pgvector) · SQL 직접 작성(`psycopg`) · LangGraph/LangChain · Gemini API · Next.js · Docker Compose
 
 ## 실행 방법 (구현하면서 채운다)
+### 1. DB와 가상 데이터 (구현됨)
+Docker Desktop이 필요하다. PostgreSQL은 호스트 포트 **5433**(컨테이너 안은 5432)을 쓴다. PC에 이미 PostgreSQL이 5432를 쓰고 있어도 충돌하지 않는다.
 ```bash
-cp .env.example .env      # 값 채우기 (GEMINI_API_KEY 등, .env는 커밋하지 않음)
-docker compose up -d      # PostgreSQL(pgvector) + Mailpit
+docker compose up -d                       # PostgreSQL(pgvector) + Mailpit, 최초 기동 시 db/001~004 자동 적용
+python -m venv backend/.venv
+backend/.venv/Scripts/python -m pip install "psycopg[binary]" argon2-cffi cryptography
+# 고정 시드 적용 (약관·상품·카테고리·가맹점 룰)
+for f in db/seed/*.sql; do docker compose cp "$f" db:/tmp/ && docker compose exec -T db psql -U bank -d bank -v ON_ERROR_STOP=1 -q -f "/tmp/$(basename $f)"; done
+backend/.venv/Scripts/python scripts/seed_demo.py       # 가상 회원·계좌·카드·거래 생성 (.env가 없으면 자동 생성)
+backend/.venv/Scripts/python scripts/verify_spending.py # 소비 집계·원장 잔액 검증
 ```
-백엔드·프론트엔드 설치와 실행 명령은 구현 후 여기에 적는다.
+- 가상 회원은 `demo_a`(주 시연), `demo_b`, `demo_c`이고 비밀번호·PIN은 `.env`의 `DEMO_*` 값이다.
+- 맥/리눅스에서는 `backend/.venv/bin/python`을 쓴다.
+
+### 2. 백엔드·프론트엔드
+설치와 실행 명령은 구현 후 여기에 적는다.
 
 ## 구현한 기능
 (구현 후 작성. 기능 ID는 [docs/agent-spec.md](docs/agent-spec.md) 1.3절 기준)
@@ -51,7 +62,7 @@ docker compose up -d      # PostgreSQL(pgvector) + Mailpit
 |---|---|
 | "이번 달 카페에 얼마 썼어?" → "지난달은?" | 소비 조회, 후속 질문 맥락 유지 |
 | "이체해줘" | 받는 사람·금액을 되묻고, 이체 화면 링크로 안내 |
-| "민수한테 5만원 보내줘" | 받는 계좌·금액이 채워진 이체 화면 링크 |
+| "서준한테 5만원 보내줘" | 받는 계좌·금액이 채워진 이체 화면 링크 |
 | "식비 예산 40만원으로 설정해줘" | 확인 후 예산 저장 |
 | "청년 통장 가입 조건이 뭐야?" | 상품 정보·약관 검색(RAG)으로 답변, 출처 표시 |
 | "거래중지는 어떻게 풀어?" | FAQ 근거로 안내와 해당 화면 링크 |

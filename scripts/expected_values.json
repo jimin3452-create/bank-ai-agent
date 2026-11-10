@@ -1,0 +1,119 @@
+{
+  "user": "demo_a",
+  "seed": 20261110,
+  "months": {
+    "2026-05": {
+      "total": 1385200,
+      "card_total": 775200,
+      "transfer_other_total": 610000,
+      "own_transfer_excluded": 300000,
+      "by_category": {
+        "CAFE": 66500,
+        "FOOD": 260000,
+        "LIVING": 143800,
+        "SHOPPING": 103000,
+        "SUBSCRIPTION": 82900,
+        "TRANSFER": 610000,
+        "TRANSPORT": 119000
+      }
+    },
+    "2026-06": {
+      "total": 1405950,
+      "card_total": 810950,
+      "transfer_other_total": 595000,
+      "own_transfer_excluded": 300000,
+      "by_category": {
+        "CAFE": 80700,
+        "FOOD": 252000,
+        "LIVING": 142300,
+        "SHOPPING": 143400,
+        "SUBSCRIPTION": 82900,
+        "TRANSFER": 595000,
+        "TRANSPORT": 109650
+      }
+    },
+    "2026-07": {
+      "total": 1491850,
+      "card_total": 891850,
+      "transfer_other_total": 600000,
+      "own_transfer_excluded": 300000,
+      "by_category": {
+        "CAFE": 97400,
+        "FOOD": 292000,
+        "LIVING": 140200,
+        "SHOPPING": 163700,
+        "SUBSCRIPTION": 82900,
+        "TRANSFER": 600000,
+        "TRANSPORT": 115650
+      }
+    },
+    "2026-08": {
+      "total": 1917700,
+      "card_total": 1352700,
+      "transfer_other_total": 565000,
+      "own_transfer_excluded": 300000,
+      "by_category": {
+        "CAFE": 109100,
+        "FOOD": 288000,
+        "LIVING": 171200,
+        "SHOPPING": 577100,
+        "SUBSCRIPTION": 82900,
+        "TRANSFER": 565000,
+        "TRANSPORT": 124400
+      }
+    },
+    "2026-09": {
+      "total": 1766750,
+      "card_total": 1196750,
+      "transfer_other_total": 570000,
+      "own_transfer_excluded": 300000,
+      "by_category": {
+        "CAFE": 121800,
+        "FOOD": 341500,
+        "LIVING": 283500,
+        "SHOPPING": 249200,
+        "SUBSCRIPTION": 82900,
+        "TRANSFER": 570000,
+        "TRANSPORT": 117850
+      }
+    },
+    "2026-10": {
+      "total": 2295200,
+      "card_total": 1655200,
+      "transfer_other_total": 640000,
+      "own_transfer_excluded": 300000,
+      "by_category": {
+        "CAFE": 141500,
+        "FOOD": 405000,
+        "LIVING": 230200,
+        "MEDICAL": 280000,
+        "SHOPPING": 330400,
+        "SUBSCRIPTION": 82900,
+        "TRANSFER": 640000,
+        "TRANSPORT": 123700,
+        "UNCLASSIFIED": 61500
+      }
+    },
+    "2026-11": {
+      "total": 1176250,
+      "card_total": 551250,
+      "transfer_other_total": 625000,
+      "own_transfer_excluded": 0,
+      "by_category": {
+        "CAFE": 40900,
+        "FOOD": 322000,
+        "LIVING": 26600,
+        "SHOPPING": 33100,
+        "SUBSCRIPTION": 17000,
+        "TRANSFER": 625000,
+        "TRANSPORT": 70650,
+        "UNCLASSIFIED": 41000
+      }
+    }
+  },
+  "balances": {
+    "A1": 5561100,
+    "A2": 1800000,
+    "B1": 5169000
+  }
+}

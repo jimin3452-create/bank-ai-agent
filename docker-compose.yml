@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bank}
       POSTGRES_DB: ${POSTGRES_DB:-bank}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       # 최초 기동 시 001 -> 002 -> 003 순서로 자동 적용된다 (seed 폴더는 제외)
