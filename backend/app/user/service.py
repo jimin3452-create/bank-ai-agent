@@ -39,7 +39,7 @@ def list_terms(conn: Connection, category: str) -> list[dict]:
 
 def send_code(conn: Connection, email: str, purpose: str) -> None:
     email = email.lower()
-    if purpose == "SIGNUP":
+    if purpose in ("SIGNUP", "CHANGE_EMAIL"):
         if conn.execute("SELECT 1 FROM users WHERE email = %s", (email,)).fetchone():
             raise AppError(409, "DUPLICATE_VALUE", "이미 가입된 이메일입니다", "email")
     elif purpose == "RESET_PW":

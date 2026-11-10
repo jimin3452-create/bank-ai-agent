@@ -33,11 +33,13 @@
 | POST | `/api/auth/login-pin` | ID + PIN 로그인 | A2.1 | 불필요 |
 | POST | `/api/auth/logout` | 로그아웃(쿠키 삭제) | A2.3 | 필요 |
 | GET | `/api/me` | 내 정보 | A3 | 필요 |
-| PATCH | `/api/me` | 정보 변경(이메일은 인증번호 필요) | A3 | 필요 |
+| POST | `/api/me/email-code` | 이메일 변경용 인증번호를 **새 이메일**로 발송 `{email}` (목적 `CHANGE_EMAIL`) | A3 | 필요 |
+| PATCH | `/api/me` | 정보 변경 `{pin, phone_num?, birth?, email?, email_code?}`. 모든 변경에 PIN 필요, 이메일은 새 이메일 인증번호도 필요, 이름은 변경 불가(보내면 400) | A3 | 필요 |
 | POST | `/api/me/pin/verify` | PIN 확인(민감 동작 전 인증) | 공통 | 필요 |
-| PUT | `/api/me/pin` | PIN 변경 | A3 | 필요 |
+| PUT | `/api/me/pin` | PIN 변경 `{current_pin, new_pin}`. 현재 PIN이 틀리면 실패 횟수가 쌓여 5회째에 잠금 | A3 | 필요 |
 | POST | `/api/auth/password-reset` | 비밀번호 재설정(인증번호 확인 후) | A3 | 불필요 |
-| DELETE | `/api/me` | 회원 탈퇴(PIN) | A3 | 필요 |
+| GET | `/api/me/withdraw-check` | 탈퇴 가능 여부와 제한 사유(잔액·카드·자동이체) | A3 | 필요 |
+| POST | `/api/me/withdraw` | 회원 탈퇴 `{pin}`. 본문이 필요해 DELETE 대신 POST를 쓴다. 성공하면 쿠키를 지움 | A3 | 필요 |
 | GET | `/api/me/login-histories` | 접속 기록 | A2.4 | 필요 |
 
 ## 3. 계좌 (B)

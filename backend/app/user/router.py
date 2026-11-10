@@ -4,9 +4,10 @@ from fastapi import APIRouter, Request, Response
 
 from app.common.deps import COOKIE_NAME, CurrentUser, Db
 from app.config import settings
-from app.user import service
+from app.user import profile, service
 from app.user.schemas import (EmailCodeRequest, EmailCodeVerifyRequest, LoginRequest, PasswordResetRequest,
-                              PinLoginRequest, PinVerifyRequest, SignupRequest)
+                              NewEmailRequest, PinChangeRequest, PinLoginRequest, PinVerifyRequest,
+                              ProfileUpdateRequest, SignupRequest, WithdrawRequest)
 
 router = APIRouter(prefix="/api")
 
@@ -90,3 +91,33 @@ def verify_pin(body: PinVerifyRequest, user: CurrentUser, conn: Db):
 @router.get("/me/login-histories")
 def login_histories(user: CurrentUser, conn: Db):
     return service.login_histories(conn, user["id"])
+
+
+@router.post("/me/email-code")
+def send_email_change_code(body: NewEmailRequest, user: CurrentUser, conn: Db):
+    """이메일 변경용 인증번호를 새 이메일로 보낸다."""
+    profile.send_email_change_code(conn, user, body.email)
+    return {"sent": True}
+
+
+@router.patch("/me")
+def update_me(body: ProfileUpdateRequest, user: CurrentUser, conn: Db):
+    return profile.update_profile(conn, user, body)
+
+
+@router.put("/me/pin")
+def change_pin(body: PinChangeRequest, user: CurrentUser, conn: Db):
+    profile.change_pin(conn, user, body.current_pin, body.new_pin)
+    return {"changed": True}
+
+
+@router.get("/me/withdraw-check")
+def withdraw_check(user: CurrentUser, conn: Db):
+    return profile.withdraw_check(conn, user["id"])
+
+
+@router.post("/me/withdraw")
+def withdraw(body: WithdrawRequest, response: Response, user: CurrentUser, conn: Db):
+    result = profile.withdraw(conn, user, body.pin)
+    response.delete_cookie(COOKIE_NAME, path="/")
+    return result

@@ -2,7 +2,7 @@ import re
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 LOGIN_ID_RE = re.compile(r"^[a-z0-9_]{4,30}$")
 PASSWORD_RE = re.compile(r"^(?=.*[A-Za-z])(?=.*\d)\S{8,64}$")
@@ -128,3 +128,63 @@ class PasswordResetRequest(BaseModel):
     @classmethod
     def _password(cls, v: str) -> str:
         return _check_password(v)
+
+
+class ProfileUpdateRequest(BaseModel):
+    """정보 변경. 이름은 바꿀 수 없다. 모든 변경은 PIN 확인이 필요하고, 이메일은 새 이메일 인증번호도 필요하다."""
+    model_config = ConfigDict(extra="forbid")
+
+    pin: str
+    phone_num: str | None = None
+    birth: date | None = None
+    email: EmailStr | None = None
+    email_code: str | None = None
+
+    @field_validator("pin")
+    @classmethod
+    def _p(cls, v: str) -> str:
+        return _check_pin(v)
+
+    @field_validator("phone_num")
+    @classmethod
+    def _phone(cls, v: str | None) -> str | None:
+        if v is not None and not PHONE_RE.match(v):
+            raise ValueError("휴대폰 번호 형식이 올바르지 않습니다 (예: 010-1234-5678)")
+        return v
+
+    @field_validator("birth")
+    @classmethod
+    def _birth(cls, v: date | None) -> date | None:
+        if v is not None and not (date(1900, 1, 1) <= v <= date.today()):
+            raise ValueError("생년월일이 올바르지 않습니다")
+        return v
+
+    @field_validator("email_code")
+    @classmethod
+    def _code(cls, v: str | None) -> str | None:
+        if v is not None and not re.fullmatch(r"\d{6}", v):
+            raise ValueError("인증번호는 숫자 6자리입니다")
+        return v
+
+
+class NewEmailRequest(BaseModel):
+    email: EmailStr
+
+
+class PinChangeRequest(BaseModel):
+    current_pin: str
+    new_pin: str
+
+    @field_validator("current_pin", "new_pin")
+    @classmethod
+    def _p(cls, v: str) -> str:
+        return _check_pin(v)
+
+
+class WithdrawRequest(BaseModel):
+    pin: str
+
+    @field_validator("pin")
+    @classmethod
+    def _p(cls, v: str) -> str:
+        return _check_pin(v)

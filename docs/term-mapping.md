@@ -241,6 +241,7 @@
 | 가입 | SIGNUP |
 | 거래중지 해제 | UNLOCK_ACCOUNT |
 | 비밀번호 재설정 | RESET_PW |
+| 이메일 변경 (SQL 주석에는 없는 추가 코드) | CHANGE_EMAIL |
 
 ### terms.category (약관 구분)
 
