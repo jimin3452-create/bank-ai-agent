@@ -200,8 +200,14 @@ def _product_keywords(name: str) -> list[str]:
 
 def knowledge_qa(ctx: Ctx, u: Understanding, message: str) -> Result:
     from app.agent.rag import search as rag_search
+    from app.agent.rag import label
     res = rag_search(ctx.conn, u.query_text or message)
-    sources = [{"title": p["title"], "type": p["type"], "version": p.get("version")} for p in res["passages"]]
+    seen, sources = set(), []
+    for p in res["passages"]:
+        name = label(p)
+        if name not in seen:  # 같은 출처가 여러 번 나오지 않게
+            seen.add(name)
+            sources.append({"title": name, "type": p["type"], "version": p.get("version")})
     return Result({"found": res["found"], "passages": res["passages"], "reason": res.get("reason")}, sources=sources)
 
 

@@ -57,7 +57,9 @@ cd backend
 ```
 - 인증번호 메일은 Mailpit(http://localhost:8025)에서 확인한다.
 - **에이전트는 Gemini 키가 있어야 동작한다.** `.env`의 `GEMINI_API_KEY=` 뒤에 직접 넣는다(채팅·커밋에 올리지 말 것). 키가 없으면 `/api/agent/chat`은 503을 돌려준다. 모델은 `GEMINI_MODEL`로 바꾼다(기본값은 구현 시점의 공식 문서로 확인).
-- 모델의 이해 품질 확인: `backend/.venv/Scripts/python scripts/eval_agent.py` (골든 질문 51개, 키 필요). 결과와 개선 과정은 [docs/agent-spec.md](docs/agent-spec.md) 6절 참조
+- 모델의 이해 품질 확인: `backend/.venv/Scripts/python scripts/eval_agent.py` (골든 질문 58개, 키 필요). 결과와 개선 과정은 [docs/agent-spec.md](docs/agent-spec.md) 6절 참조
+- **RAG 지식베이스 적재**(DB가 떠 있고 키가 있어야 함): `backend/.venv/Scripts/python scripts/ingest_knowledge.py` — 법령·약관·시중 상품·FAQ·가이드와 이 앱의 약관·상품을 임베딩해 저장한다(약 40초, 내용이 그대로인 문서는 건너뜀). `--dry-run`은 키 없이 청크 수만 센다.
+- RAG 검색 품질 확인: `backend/.venv/Scripts/python scripts/eval_rag.py -v` (정답이 정해진 질문 39개). 문서 출처와 사용 범위는 [knowledge/SOURCES.md](knowledge/SOURCES.md)
 - 구현된 API:
   - 회원·인증: 약관, 이메일 인증번호, 회원가입, 로그인(ID/PW·PIN), 로그아웃, 비밀번호 재설정, 내 정보, PIN 확인, 접속 기록, 정보 변경(휴대폰·생년월일·이메일), PIN 변경, 회원 탈퇴(제한 사유 확인 포함)
   - 계좌: 상품 안내·가입 가능 여부, 계좌 개설, 목록·상세, 거래내역 조회·검색·상세, 거래내역 다운로드(CSV 메일), 즐겨찾기·별칭, 이체한도 조회·변경, 통장 비밀번호 확인(5회 오류 시 거래중지), 거래중지 해제, 해지 가능 여부·해지
@@ -66,7 +68,7 @@ cd backend
   - 개발용: 카드 결제 시뮬레이터, 입금 시뮬레이터, 자동이체 즉시 실행 (`APP_ENV=dev`에서만 동작)
   - 소비: 월 소비 요약(전월 대비), 카테고리별 집계, 가맹점 TOP, 일별 추이, 두 달 비교, 소비 거래 목록, 가맹점 카테고리 보정, 월·카테고리별 예산과 사용률, 예산 80%·100% 도달 알림 (소비 = 카드 결제 + 타인 명의 이체)
   - 에이전트(LangGraph): 자연어 챗(`/api/agent/chat`)과 승인 처리(`/api/agent/confirm`), 대화 세션 관리. 조회·소비 분석은 직접 답하고, 예산 설정·카테고리 보정·즐겨찾기·거래내역 메일은 승인 후 처리하며, 이체·카드 분실·해지 같은 동작은 화면 링크로 안내한다. 맥락 유지·되묻기·숫자 검증 포함
-  - 나머지(RAG 지식 검색)는 [docs/agent-spec.md](docs/agent-spec.md) 기준으로 구현 예정이다.
+  - RAG(문서 검색): 약관·법령·시중 상품 공시·앱 FAQ·소비 가이드를 근거로 답하고, 실제로 쓴 문서의 출처를 붙인다. 근거가 없으면 지어내지 않고 모른다고 답한다
 
 ### 3. 프론트엔드
 설치와 실행 명령은 구현 후 여기에 적는다.

@@ -145,10 +145,41 @@ def _products(f):
     return "계좌 상품 안내예요. 금리는 안내용이에요.\n" + _bullets(lines)
 
 
+def _excerpt(text: str, limit: int = 380) -> str:
+    """청크 앞의 `[제목]` 머리줄을 떼고 문장 끝에서 자른다."""
+    body = re.sub(r"^\[[^\]]*\]\s*", "", text.strip())
+    body = re.sub(r"\s+", " ", body)
+    if len(body) <= limit:
+        return body
+    cut = body[:limit]
+    end = max(cut.rfind("다. "), cut.rfind("요. "), cut.rfind(". "))
+    return (cut[:end + 1] if end > limit // 2 else cut.rstrip()) + " …"
+
+
 def _knowledge(f):
+    """모델 없이 쓸 수 있는 결정적 답변: 가장 관련 있는 문서의 핵심 부분을 그대로 보여 준다."""
     if not f["found"]:
+        if f.get("reason") in ("embedder-unavailable", "embedding-failed"):
+            return "지금은 안내 문서를 검색할 수 없어요. 잠시 후 다시 시도해 주세요."
         return NO_KNOWLEDGE
-    return "관련 안내예요.\n" + _bullets([f"{p['title']}: {p['text'][:200]}" for p in f["passages"][:3]])
+    first = f["passages"][0]
+    return f"관련 안내예요. ({first['heading'].split(' (')[0]})\n{_excerpt(first['text'])}"
+
+
+LAW_NOTE = "※ 일반적인 법령·약관 안내이며 개별 사안에 대한 법률 자문이 아니에요."
+MARKET_NOTE = "※ 시중 은행 상품은 공시 기준 정보이며 추천이 아니에요. 가입 전에 해당 은행에서 최신 조건을 확인해 주세요."
+
+
+def knowledge_footer(f: dict, sources: list[dict]) -> str:
+    """출처와 안내 문구는 모델이 아니라 서버가 붙인다(모델이 출처를 지어내지 못하게)."""
+    if not f.get("found") or not sources:
+        return ""
+    lines = ["출처: " + " / ".join(s["title"] for s in sources[:3])]
+    if any(p["type"] in ("LAW", "STANDARD_TERMS") for p in f["passages"]):
+        lines.append(LAW_NOTE)
+    if any(p["type"] == "MARKET_PRODUCT" for p in f["passages"]):
+        lines.append(MARKET_NOTE)
+    return "\n".join(lines)
 
 
 # ---------- 소비 ----------
@@ -301,7 +332,12 @@ def collect_numbers(obj) -> set[str]:
     if isinstance(obj, (int, float)):
         found.add(_normalize(str(obj)))
     elif isinstance(obj, str):
-        found.update(_normalize(t) for t in _NUM.findall(obj))
+        for t in _NUM.findall(obj):
+            found.add(_normalize(t))
+            if "." in t:  # '22.12.31'처럼 점으로 이어 쓴 날짜는 22, 12, 31 각각을 근거로 인정한다
+                found.update(p for p in t.replace(",", "").split(".") if p)
+        for m in re.finditer(r"['‘’](\d{2})(?!\d)", obj):  # '22 같은 두 자리 연도 줄임 표기는 2022도 같은 뜻이다
+            found.add("20" + m.group(1))
     elif isinstance(obj, dict):
         for v in obj.values():
             found |= collect_numbers(v)
@@ -311,15 +347,19 @@ def collect_numbers(obj) -> set[str]:
     return found
 
 
-def numbers_are_grounded(reply: str, facts, extra: str = "") -> bool:
-    """답변의 모든 숫자가 도구 결과(또는 사용자가 직접 말한 값)에 있는지 확인한다. 날짜·월 같은 작은 수(0~31)는 허용한다."""
+def numbers_are_grounded(reply: str, facts, extra: str = "", strict: bool = False) -> bool:
+    """답변의 모든 숫자가 도구 결과(또는 사용자가 직접 말한 값)에 있는지 확인한다.
+
+    기본은 날짜·월 같은 작은 수(0~31)를 허용한다. strict=True면 예외 없이 모든 숫자가 근거에 있어야 한다
+    (법령·약관 답변에서 '2주'를 '30일'로 바꾸는 식의 오류를 막기 위해 문서 기반 답변에 쓴다).
+    """
     allowed = collect_numbers(facts) | {_normalize(t) for t in _NUM.findall(extra)}
     for tok in _NUM.findall(reply):
         n = _normalize(tok)
         if n in allowed:
             continue
         try:
-            if "." not in n and 0 <= int(n) <= 31:
+            if not strict and "." not in n and 0 <= int(n) <= 31:
                 continue
         except ValueError:
             pass

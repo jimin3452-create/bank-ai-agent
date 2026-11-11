@@ -11,6 +11,8 @@ class ScriptedLLM:
         self.compose_calls: list[dict] = []
         self.fail_understand = False
         self.compose_fn = None                # (draft) -> 다듬은 문장. None이면 초안 그대로
+        self.answer_fn = None                 # (message, passages) -> 문서 기반 답변. None이면 모델 답변 없음(문서 발췌로 대신)
+        self.answer_calls: list[dict] = []
 
     def say(self, message: str, **kw) -> "ScriptedLLM":
         self.table[message] = Understanding(**kw)
@@ -28,3 +30,9 @@ class ScriptedLLM:
         if self.compose_fn is None:
             return draft
         return self.compose_fn(draft)
+
+    def answer_from_passages(self, message: str, passages: list[dict], history: list[dict]):
+        self.answer_calls.append({"message": message, "passages": passages})
+        if self.answer_fn is None:
+            return None
+        return self.answer_fn(message, passages)

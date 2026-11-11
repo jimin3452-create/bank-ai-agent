@@ -49,6 +49,15 @@ def _cleanup_db():
             conn.execute(sql)
 
 
+@pytest.fixture(autouse=True)
+def _hermetic_embedding():
+    """테스트는 실제 Gemini 임베딩을 부르지 않는다(빠르고 결정적이게). 해시 임베딩은 실제 지식베이스 벡터와 거의 무관해 기준 점수를 넘지 않는다."""
+    from app.agent.rag.embeddings import HashEmbedder, set_embedder
+    set_embedder(HashEmbedder())
+    yield
+    set_embedder(None)
+
+
 @pytest.fixture()
 def outbox(monkeypatch):
     sent = []

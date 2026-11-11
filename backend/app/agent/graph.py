@@ -181,7 +181,7 @@ def compose(state: AgentState, runtime: Runtime[RunCtx]) -> dict:
     if state.get("reply"):
         return {}
     rc = runtime.context
-    parts = []
+    parts, knowledge_parts = [], []
     for entry in state.get("facts", []):
         a, f = entry["action"], entry["facts"]
         if a == "CANCELLED":
@@ -190,12 +190,14 @@ def compose(state: AgentState, runtime: Runtime[RunCtx]) -> dict:
             parts.append(render.render_write(f))
         elif a in LINK_ACTIONS:
             parts.append(render.render_link(f))
+        elif a == "KNOWLEDGE_QA":
+            knowledge_parts.append(_knowledge_answer(rc, state, f))   # 문서 기반 답변(출처 포함): 다듬기 대상이 아니다
         else:
             parts.append(render.render(a, f))
-    draft = "\n\n".join(p for p in parts if p) or render.SMALLTALK
+    draft = "\n\n".join(p for p in parts if p)
     reply = draft
-    facts_only = [e["facts"] for e in state.get("facts", [])]
-    if settings.agent_polish_reply and not any(e.get("kind") == "cancel" for e in state.get("facts", [])):
+    facts_only = [e["facts"] for e in state.get("facts", []) if e["action"] != "KNOWLEDGE_QA"]
+    if draft and settings.agent_polish_reply and not any(e.get("kind") == "cancel" for e in state.get("facts", [])):
         try:
             polished = render.plain_text(rc.llm.compose(state["message"], draft, facts_only, state.get("history", [])))
             no_url = re.search(r"https?://|www\.", polished) is None  # 링크는 서버가 만든 것만 나간다
@@ -204,7 +206,54 @@ def compose(state: AgentState, runtime: Runtime[RunCtx]) -> dict:
                 reply = polished
         except Exception:
             pass  # 다듬기에 실패해도 결정적 문장으로 답한다
-    return {"reply": reply}
+    reply = "\n\n".join(p for p in [reply, *(t for t, _ in knowledge_parts)] if p) or render.SMALLTALK
+    out = {"reply": reply}
+    used_sources = next((s for _, s in knowledge_parts if s is not None), None)
+    if used_sources is not None:  # 응답의 sources에는 답에 실제로 쓴 문서만 담는다
+        out["sources"] = used_sources
+    return out
+
+
+USED_LINE = re.compile(r"\n?[ \t]*근거[ \t]*[:：][ \t]*([\d,\s]+?)[ \t]*$")
+
+
+def _knowledge_answer(rc: RunCtx, state: AgentState, f: dict) -> tuple[str, list[dict] | None]:
+    """검색된 문서를 근거로 답한다. 모델 답변은 숫자가 문서와 맞고 링크가 없을 때만 쓰고, 아니면 문서 발췌로 대신한다.
+
+    출처와 안내 문구는 모델이 아니라 서버가 붙인다. 출처는 모델이 '근거: 번호'로 알려 준 문서만 보여 준다(없으면 가장 관련 있는 문서).
+    반환: (답변 문장, 답에 쓴 출처 목록 또는 None)
+    """
+    from app.agent.rag import label
+    text, used = None, None
+    answer_fn = getattr(rc.llm, "answer_from_passages", None)
+    if f.get("found") and answer_fn:
+        try:
+            ans = answer_fn(state["message"], f["passages"], state.get("history", []))
+            if ans:
+                m = USED_LINE.search(ans)
+                if m:
+                    nums = {int(n) for n in re.findall(r"\d+", m.group(1))}
+                    used = [i for i in sorted(nums) if 1 <= i <= len(f["passages"])] or None
+                    ans = ans[:m.start()]
+                ans = render.plain_text(ans)
+                no_url = re.search(r"https?://|www\.", ans) is None
+                if ans and no_url and render.numbers_are_grounded(ans, f["passages"], extra=state["message"], strict=True):
+                    text = ans
+        except Exception:
+            text, used = None, None  # 모델 호출이 실패해도 문서 발췌로 답한다
+    if text is None:
+        text, used = render.render("KNOWLEDGE_QA", f), [1] if f.get("found") else None  # 발췌는 첫 문서에서 가져온다
+    if "찾지 못했" in text or not f.get("found"):  # 문서로 답하지 못했다고 한 답변에는 출처를 붙이지 않는다
+        return text, ([] if f.get("found") else None)
+    passages = [f["passages"][i - 1] for i in (used or [1])]
+    sources, seen = [], set()
+    for p in passages:
+        name = label(p)
+        if name not in seen:
+            seen.add(name)
+            sources.append({"title": name, "type": p["type"], "version": p.get("version")})
+    footer = render.knowledge_footer({"found": True, "passages": passages}, sources)
+    return text + (f"\n\n{footer}" if footer else ""), sources
 
 
 def finalize(state: AgentState) -> dict:
