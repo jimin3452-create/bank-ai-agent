@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f5f8f6;
+  --surface: #ffffff;
+  --ink: #14211c;
+  --ink-sub: #5d6b65;
+  --line: #e1e9e4;
+  --brand: #16805d;
+  --brand-dark: #123d32;
+  --brand-soft: #eaf5ef;
+  --danger: #c93b3b;
+  --danger-soft: #fdecec;
+  --warn: #b7791f;
+  --warn-soft: #fff4de;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-sub: var(--ink-sub);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+
+html,
+body {
+  background: #e9eeeb;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
