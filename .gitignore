@@ -19,3 +19,7 @@ out/
 Thumbs.db
 .idea/
 .vscode/
+
+# 개발 서버 로그
+*.log
+*.err

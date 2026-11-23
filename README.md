@@ -6,9 +6,9 @@
 | 제출물 | 위치 | 상태 |
 |---|---|---|
 | 기획 자료 (기능 목록, 이용 흐름, DB 구조 등) | [docs/](docs/) | 작성됨 |
-| 실행 코드 | `backend/`, `frontend/`, `db/`, `scripts/` | 구현 전 |
-| 실행 안내(README) | 이 문서 | 구현 후 완성 |
-| 회고 | [docs/retrospective.md](docs/retrospective.md) | 진행 기록 중 |
+| 실행 코드 | `backend/`, `frontend/`, `db/`, `scripts/` | 구현됨 (백엔드 테스트 167개 통과) |
+| 실행 안내(README) | 이 문서 | 작성됨 |
+| 회고 | [docs/retrospective.md](docs/retrospective.md) | 작성됨 |
 
 ## 문서
 | 문서 | 내용 |
@@ -84,10 +84,28 @@ npm run build    # 운영 빌드 확인
 - 에이전트가 안내하는 화면 링크는 해당 화면을 값이 미리 채워진 상태로 연다(PIN은 항상 화면에서 직접 입력). 10분간 조작이 없으면 자동 로그아웃된다.
 
 ## 구현한 기능
-(구현 후 작성. 기능 ID는 [docs/agent-spec.md](docs/agent-spec.md) 1.3절 기준)
+기능 ID는 [docs/agent-spec.md](docs/agent-spec.md) 1.3절 기준이고, 구현한 API 목록은 위 "백엔드" 절에 있다.
+
+| 영역 | 구현 내용 |
+|---|---|
+| 회원·인증 | 약관 동의, 이메일 인증번호, 회원가입, ID/PW·PIN 로그인, 5회 실패 시 잠금, 비밀번호 재설정, 정보 변경, 탈퇴 |
+| 계좌 | 상품 안내·개설, 거래내역 조회·검색·CSV 메일, 이체한도, 통장 비밀번호 오류 누적 시 거래중지와 해제, 해지 |
+| 이체 | 즉시이체(PIN·한도·중복 방지 키·잠금), 자동이체와 스케줄러 |
+| 카드 | 체크카드 발급(번호 암호화), 한도·해외결제, 정지·분실·재발급·해지, 결제 시뮬레이터 |
+| 소비 | 월·카테고리·가맹점·일별 집계, 두 달 비교, 예산과 80%·100% 알림 |
+| 에이전트 | LangGraph 자연어 챗, 조회·소비 분석 직접 답변, 예산 등 쓰기는 승인 후 처리, 이체·카드 분실 등은 화면 링크로 안내 |
+| RAG | 법령·약관·상품·FAQ 검색, 출처 표시, 근거 없으면 모른다고 답변 |
+| 프론트엔드 | 모바일 폭 웹: 로그인, 홈, 계좌, 이체, 카드, 소비 리포트, 에이전트 챗 |
 
 ## 확인해 볼 사용 흐름
-(구현 후 작성. [docs/product-spec.md](docs/product-spec.md) 7절 FLOW-001~010 기준으로 데모 계정 `demo_a`로 확인)
+[docs/product-spec.md](docs/product-spec.md) 7절 FLOW 기준이다. 아래 흐름은 데모 계정 `demo_a`로 화면에서 따라 해 볼 수 있고, 각 흐름의 백엔드 동작은 자동 테스트로 확인했다.
+
+1. 로그인(FLOW-002) → 홈에서 계좌 목록 확인
+2. 이체(FLOW-005): 받는 계좌·금액 → 받는 분 확인 → PIN → 결과, 같은 요청을 다시 보내도 한 번만 처리
+3. 계좌 관리(FLOW-007~009): 이체한도 변경, 거래중지 해제, 잔액이 남은 계좌 해지 시도(차단 확인)
+4. 카드(FLOW-010): 발급, 정지, 분실 신고
+5. 소비 리포트와 예산 → 에이전트 챗에서 "이번 달 카페에 얼마 썼어?", "청년 통장 가입 조건이 뭐야?"(출처 표시) 질문
+6. 가입(FLOW-001)과 자동이체(FLOW-006)도 같은 방식으로 확인할 수 있다.
 
 ## 자연어 요청 예시
 | 요청 | 기대 동작 |
@@ -103,17 +121,23 @@ npm run build    # 운영 빌드 확인
 ## 동작 확인 결과
 구현한 기능과 직접 선정한 실패 상황의 확인 결과를 아래에 기록한다. (테스트 ID는 [docs/product-spec.md](docs/product-spec.md) 10절, [docs/agent-spec.md](docs/agent-spec.md) 10절)
 
-| 구분 | 상황 | 기대 결과 | 결과 |
-|---|---|---|---|
-| 실패 | 잔액 부족·한도 초과·거래중지 계좌로 이체 | 처리 차단, 잔액·원장 변경 없음 | 미실행 |
-| 실패 | 같은 이체 요청을 두 번 전송 | 한 번만 처리 | 미실행 |
-| 실패 | 다른 회원의 계좌·카드 ID로 직접 조회 | 차단, 정보 미노출 | 미실행 |
-| 실패 | 로그인 5회 실패 | 계정 잠금 | 미실행 |
-| 실패 | 잔액이 남은 계좌 해지 | 제한 사유와 함께 차단 | 미실행 |
-| 실패 | 만료된 이메일 인증번호 사용 | 인증 실패 안내 | 미실행 |
-| 실패 | 에이전트에 PIN을 말하며 이체 요청 | PIN 미사용, 이체 화면 링크만 안내 | 미실행 |
-| 실패 | 문서에 없는 질문 | 근거 없음 안내, 지어내지 않음 | 미실행 |
-| 실패 | LLM 호출 실패 | 재시도 안내와 관련 화면 링크 | 미실행 |
+2026-11-23에 `backend`에서 `pytest`를 실행했다(실제 PostgreSQL 사용, 167개 통과). 아래 결과는 해당 테스트가 기대 결과를 단언하는지 읽고 확인한 것이다.
+
+| 구분 | 상황 | 기대 결과 | 결과 | 확인한 테스트 |
+|---|---|---|---|---|
+| 실패 | 잔액 부족·한도 초과·거래중지 계좌로 이체 | 처리 차단, 잔액·원장 변경 없음 | 통과 | `test_transfer.py`의 `test_insufficient_balance_is_recorded_as_failed`, `test_daily_and_month_limits_count_pending_too`, `test_blocked_source_or_recipient` |
+| 실패 | 같은 이체 요청을 두 번 전송 | 한 번만 처리 | 통과 | `test_same_key_is_processed_once_and_mismatch_rejected`, `test_concurrent_same_key_creates_one_transfer` |
+| 실패 | 다른 회원의 계좌·카드 ID로 직접 조회 | 차단, 정보 미노출 | 통과 | `test_other_users_account_is_hidden_and_unauthenticated_blocked`(404), `test_list_and_detail_hide_full_number_and_check_owner` |
+| 실패 | 로그인 5회 실패 | 계정 잠금 | 통과 | `test_login_fails_five_times_locks_and_reset_unlocks` |
+| 실패 | 잔액이 남은 계좌 해지 | 제한 사유와 함께 차단 | 통과 | `test_close_blockers_and_close` |
+| 실패 | 만료된 이메일 인증번호 사용 | 인증 실패 안내 | 통과 | `test_code_expired` |
+| 실패 | 에이전트에 PIN을 말하며 이체 요청 | PIN 미사용, 이체 화면 링크만 안내 | 통과 | `test_pin_in_message_is_never_used_or_echoed` |
+| 실패 | 문서에 없는 질문 | 근거 없음 안내, 지어내지 않음 | 통과 | `test_agent_no_match_and_search_outage` |
+| 실패 | LLM 호출 실패 | 재시도 안내와 관련 화면 링크 | 통과 | `test_model_failure_gives_graceful_reply` |
+
+확인 범위의 한계:
+- 에이전트 관련 테스트(PIN, 문서 없음, LLM 실패)는 가짜 LLM(`tests/fake_llm.py`)으로 실행했다. 실제 Gemini로 이해 품질을 본 것은 `scripts/eval_agent.py` 골든 질문이며, 이번 제출 직전에는 다시 돌리지 않았다.
+- 프론트엔드 화면은 자동 테스트가 없고, 위 표에는 백엔드·에이전트 동작만 기록했다. 제출 직전의 전체 화면 점검은 하지 못했다.
 
 ## 미해결 제한
 [docs/agent-spec.md](docs/agent-spec.md) 12절 참조.

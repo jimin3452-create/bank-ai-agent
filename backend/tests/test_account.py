@@ -1,5 +1,6 @@
 """계좌 API 테스트 (product-spec 10절 TC-F-003/004/007/008, TC-E-005/009, TC-S-001/003 대응)."""
 import re
+from datetime import date
 import uuid
 
 import pytest
@@ -279,7 +280,7 @@ def test_statement_request_sent_and_failed(client, outbox, files, monkeypatch):
     aid = open_account(client)["id"]
     add_tx(aid, "CARD", "OUT", 5600, 2, "스타벅스 강남점", balance=94400)
     url = f"/api/accounts/{aid}/statements"
-    res = client.post(url, json={"from": "2026-01-01", "to": "2026-11-10"})
+    res = client.post(url, json={"from": "2026-01-01", "to": date.today().isoformat()})
     assert res.status_code == 201 and res.json()["status"] == "SENT"
     mail = files[0]
     assert mail["to"] == user["email"].lower() and mail["filename"].endswith(".csv")
@@ -287,10 +288,10 @@ def test_statement_request_sent_and_failed(client, outbox, files, monkeypatch):
     assert "스타벅스 강남점" in text and "5600" in text and text.startswith("거래일시")
     assert "*" in mail["body"]  # 본문의 계좌번호는 마스킹
 
-    res = client.post(url, json={"from": "2026-01-01", "to": "2026-11-10", "email": "other@test.example"})
+    res = client.post(url, json={"from": "2026-01-01", "to": date.today().isoformat(), "email": "other@test.example"})
     assert files[1]["to"] == "other@test.example" and res.json()["email"] == "other@test.example"
 
-    assert client.post(url, json={"from": "2024-01-01", "to": "2026-11-10"}).status_code == 400  # 1년 초과
+    assert client.post(url, json={"from": "2024-01-01", "to": date.today().isoformat()}).status_code == 400  # 1년 초과
     assert client.post(url, json={"from": "2026-05-02", "to": "2026-05-01"}).status_code == 400
     assert client.post(url, json={"from": "2026-01-01", "to": "2099-01-01"}).status_code == 400  # 미래 날짜
     assert client.post(url, json={"from": "2026-01-01", "to": "2026-02-01", "email": "not-an-email"}).status_code == 400
